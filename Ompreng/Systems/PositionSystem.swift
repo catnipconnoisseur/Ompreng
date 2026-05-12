@@ -3,13 +3,13 @@ import SpriteKit
 public class DishFactory {
     /// Creates a new food entity with a random dish type
     static func createRandomDish(at position: CGPoint) -> FoodEntity {
-        let randomDishType = DishType.random()
-        return FoodEntity(dishType: randomDishType, position: position)
+        let randomFoodType = FoodType.random()
+        return FoodEntity(foodType: randomFoodType, position: position)
     }
     
     /// Creates a food entity with a specific dish type
-    static func createDish(of type: DishType, at position: CGPoint) -> FoodEntity {
-        return FoodEntity(dishType: type, position: position)
+    static func createDish(of type: FoodType, at position: CGPoint) -> FoodEntity {
+        return FoodEntity(foodType: type, position: position)
     }
 }
 

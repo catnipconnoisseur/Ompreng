@@ -1,18 +1,51 @@
 import SpriteKit
 
+enum FoodType: CaseIterable {
+    case nasi
+    case ayam
+    case semangka
+    case brokoli
+    case susu
+    
+    var displayName: String {
+        switch self {
+        case .nasi:      return "Nasi"
+        case .ayam:      return "Ayam"
+        case .semangka:  return "Semangka"
+        case .brokoli:   return "Brokoli"
+        case .susu:      return "Susu"
+        }
+    }
+    
+    // Colors for Food Bar
+    var color: SKColor {
+        switch self {
+        case .nasi:      return SKColor(red: 0.96, green: 0.87, blue: 0.60, alpha: 1)
+        case .ayam:      return SKColor(red: 0.93, green: 0.58, blue: 0.19, alpha: 1)
+        case .semangka:  return SKColor(red: 0.93, green: 0.25, blue: 0.30, alpha: 1)
+        case .brokoli:   return SKColor(red: 0.27, green: 0.73, blue: 0.35, alpha: 1)
+        case .susu:      return SKColor(red: 0.94, green: 0.94, blue: 0.96, alpha: 1)
+        }
+    }
+    
+    static func random() -> FoodType {
+        return allCases.randomElement() ?? .nasi
+    }
+}
+
 public class FoodEntity: SKSpriteNode {
     let foodTypeComponent: FoodTypeComponent
     
-    var dishType: DishType {
-        return foodTypeComponent.dishType
+    var foodType: FoodType {
+        return foodTypeComponent.type
     }
     
-    init(dishType: DishType, position: CGPoint) {
-        self.foodTypeComponent = FoodTypeComponent(dishType: dishType)
-        super.init(texture: nil, color: dishType.color, size: CGSize(width: 40, height: 40))
+    init(foodType: FoodType, position: CGPoint) {
+        self.foodTypeComponent = FoodTypeComponent(type: foodType)
+        super.init(texture: nil, color: foodType.color, size: CGSize(width: 40, height: 40))
         
         self.position = position
-        self.name = "food_\(dishType.rawValue)"
+        self.name = "food_\(foodType.displayName)"
         self.zPosition = 1
         
         // Add physics for collision detection
