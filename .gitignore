@@ -1,0 +1,40 @@
+# Xcode
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+xcuserdata/
+DerivedData/
+*.resolved
+
+# Build artifacts
+build/
+.build/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build
+
+# SPM
+.swiftpm/
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.swp
+*.swo
+*~
+.env
