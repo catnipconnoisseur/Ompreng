@@ -3,25 +3,26 @@ import SwiftUI
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     var spawner: DishSpawner?
-<<<<<<< HEAD
-=======
     var timerLabel: SKLabelNode!
     var remainingTime: TimeInterval = 120
     var tray: SKSpriteNode!
->>>>>>> ea5cfc6 (Add draggable tray and implement dish collision detection)
     
     override func didMove(to view: SKView) {
-        // Initialize game scene for iPad landscape
         self.size = CGSize(width: 1024, height: 768)
         self.backgroundColor = .white
-<<<<<<< HEAD
-=======
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         self.physicsWorld.contactDelegate = self
->>>>>>> ea5cfc6 (Add draggable tray and implement dish collision detection)
         
-        // Add physics world gravity
-        self.physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+        // Setup Timer
+        timerLabel = SKLabelNode(fontNamed: "Arial")
+        timerLabel.fontSize = 64
+        timerLabel.fontColor = .black
+        timerLabel.horizontalAlignmentMode = .center
+        timerLabel.verticalAlignmentMode = .center
+        timerLabel.position = CGPoint(x: 570, y: 680)
+        timerLabel.zPosition = 1000
+        timerLabel.text = "2:00"
+        self.addChild(timerLabel)
         
         // Initialize dish spawner
         spawner = DishSpawner(scene: self, spawnInterval: 0.5)
@@ -43,6 +44,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func update(_ currentTime: TimeInterval) {
+        remainingTime -= 1/60.0
+        
+        if remainingTime < 0 {
+            remainingTime = 0
+        }
+        
+        let minutes = Int(remainingTime) / 60
+        let seconds = Int(remainingTime) % 60
+        timerLabel.text = String(format: "%d:%02d", minutes, seconds)
+        
         // Remove dishes that have fallen off screen
         self.children.forEach { node in
             if let food = node as? FoodEntity, food.position.y < -50 {
@@ -87,21 +98,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 }
 
 #Preview {
-    GameScenePreviewContainer()
-}
-
-struct GameScenePreviewContainer: UIViewRepresentable {
-    func makeUIView(context: Context) -> SKView {
-        let skView = SKView()
-        // iPad landscape dimensions
-        let scene = GameScene(size: CGSize(width: 1024, height: 768))
-        scene.scaleMode = .aspectFill
-        scene.backgroundColor = .white
-        skView.presentScene(scene)
-        skView.showsFPS = true
-        skView.showsNodeCount = true
-        return skView
-    }
-    
-    func updateUIView(_ uiView: SKView, context: Context) {}
+    let skView = SKView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+    let scene = GameScene(size: CGSize(width: 1024, height: 768))
+    scene.scaleMode = .resizeFill
+    skView.presentScene(scene)
+    skView.showsFPS = true
+    skView.showsNodeCount = true
+    return skView
 }
