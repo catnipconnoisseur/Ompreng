@@ -43,12 +43,12 @@ class PlayerEntity : GKEntity {
         
         //State Machine
         stateMachine = GKStateMachine(states: [
-            //InactiveState(entity: self),
-            // ActiveState(entity: self),
-            //FrozenState(entity: self)
+            InactiveState(entity: self),
+             ActiveState(entity: self),
+            FrozenState(entity: self)
         ])
         
-        //stateMachine?.enter(InactiveState.self)
+        stateMachine?.enter(InactiveState.self)
     }
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
