@@ -1,34 +1,23 @@
 import SpriteKit
 import SwiftUI
+import GameplayKit
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
+class GameScene: SKScene {
+
     var spawner: DishSpawner?
-    var timerLabel: SKLabelNode!
-    var remainingTime: TimeInterval = 120
+    var inGameState: InGameState?
     var tray: SKSpriteNode!
-    
+
+    private var gameMachine: GKStateMachine?
+    private var lastUpdateTime: TimeInterval = 0
+
     override func didMove(to view: SKView) {
         self.size = CGSize(width: 1024, height: 768)
         self.backgroundColor = .white
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         self.physicsWorld.contactDelegate = self
-        
-        // Setup Timer
-        timerLabel = SKLabelNode(fontNamed: "Arial")
-        timerLabel.fontSize = 64
-        timerLabel.fontColor = .black
-        timerLabel.horizontalAlignmentMode = .center
-        timerLabel.verticalAlignmentMode = .center
-        timerLabel.position = CGPoint(x: 570, y: 680)
-        timerLabel.zPosition = 1000
-        timerLabel.text = "2:00"
-        self.addChild(timerLabel)
-        
-        // Initialize dish spawner
-        spawner = DishSpawner(scene: self, spawnInterval: 0.5)
-        spawner?.start()
-        
-        // Setup Tray (Ompreng)
+
+        // Tray copied directly from pulled GameScene
         tray = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
         tray.position = CGPoint(x: 512, y: 50)
         tray.zPosition = 100
@@ -36,66 +25,57 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         tray.physicsBody?.isDynamic = false
         tray.physicsBody?.categoryBitMask = PhysicsCategory.player
         tray.physicsBody?.collisionBitMask = PhysicsCategory.none
+        tray.physicsBody?.contactTestBitMask = PhysicsCategory.food
         self.addChild(tray)
-        
-        // Add pan gesture recognizer
+
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         self.view?.addGestureRecognizer(panGesture)
+
+        // InGameState handles timer, score, food bar, spawner
+        let state = InGameState(scene: self)
+        inGameState = state
+        gameMachine = GKStateMachine(states: [state])
+        gameMachine?.enter(InGameState.self)
     }
-    
+
     override func update(_ currentTime: TimeInterval) {
-        remainingTime -= 1/60.0
-        
-        if remainingTime < 0 {
-            remainingTime = 0
-        }
-        
-        let minutes = Int(remainingTime) / 60
-        let seconds = Int(remainingTime) % 60
-        timerLabel.text = String(format: "%d:%02d", minutes, seconds)
-        
-        // Remove dishes that have fallen off screen
-        self.children.forEach { node in
+        let delta = lastUpdateTime == 0 ? 0 : min(currentTime - lastUpdateTime, 0.05)
+        lastUpdateTime = currentTime
+        gameMachine?.update(deltaTime: delta)
+
+        children.forEach { node in
             if let food = node as? FoodEntity, food.position.y < -50 {
                 food.removeFromParent()
             }
         }
     }
-    
+
     @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
         guard let view = self.view else { return }
         let location = gesture.location(in: view)
         let sceneLocation = self.convertPoint(fromView: location)
-        
-        // Move tray to follow finger horizontally
-        var newX = sceneLocation.x
-        
-        // Clamp tray to screen bounds (with 50px margins)
         let trayHalfWidth = tray.size.width / 2
-        newX = max(50 + trayHalfWidth, min(974 - trayHalfWidth, newX))
-        
-        tray.position.x = newX
+        tray.position.x = max(50 + trayHalfWidth, min(974 - trayHalfWidth, sceneLocation.x))
     }
-    
+}
+
+// MARK: - Physics Contact
+
+extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
-        // Determine which body is food and which is player (tray)
-        var foodBody: SKPhysicsBody?
-        var playerBody: SKPhysicsBody?
-        
-        if contact.bodyA.categoryBitMask == PhysicsCategory.food {
-            foodBody = contact.bodyA
-            playerBody = contact.bodyB
-        } else if contact.bodyB.categoryBitMask == PhysicsCategory.food {
-            foodBody = contact.bodyB
-            playerBody = contact.bodyA
-        }
-        
-        // If collision is between food and player (tray), remove the dish
-        if let food = foodBody?.node as? FoodEntity, playerBody?.categoryBitMask == PhysicsCategory.player {
-            food.removeFromParent()
+        let nodeA = contact.bodyA.node
+        let nodeB = contact.bodyB.node
+
+        guard let food = (nodeA as? FoodEntity) ?? (nodeB as? FoodEntity) else { return }
+
+        // Check contact with the raw tray node
+        if nodeA === tray || nodeB === tray {
+            inGameState?.HandleContactWithTray(food: food)
         }
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     let skView = SKView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
