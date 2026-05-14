@@ -18,15 +18,28 @@ class FrozenState: GKState {
         node.removeAllActions()
         
         // Visual feedback
-        let turnBlue = SKAction.colorize(with: .cyan, colorBlendFactor: 0.8, duration: 0.1)
         let vibrate = SKAction.sequence([
             SKAction.moveBy(x: 3, y: 0, duration: 0.05),
             SKAction.moveBy(x: -6, y: 0, duration: 0.05),
             SKAction.moveBy(x: 3, y: 0, duration: 0.05)
         ])
-        node.run(SKAction.group([turnBlue, SKAction.repeatForever(vibrate)]))
+        
+        let blink = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.3, duration: 0.1),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.1)
+        ])
+        
+        let penaltyLoop = SKAction.group([
+            SKAction.repeatForever(vibrate),
+            SKAction.repeatForever(blink)
+        ])
+        
+        node.run(penaltyLoop, withKey: "frozenVisuals")
+        
+        // TODO: Change into frozen ompreng asset
         
         // Stop physics
+        node.physicsBody?.affectedByGravity = false
         node.physicsBody?.velocity = .zero
         node.physicsBody?.contactTestBitMask = PhysicsCategory.player
         player.component(ofType: StateComponent.self)?.enterState(.frozen)
@@ -53,8 +66,17 @@ class FrozenState: GKState {
     override func willExit(to nextState: GKState) {
         guard let node = player.component(ofType: GKSKNodeComponent.self)?.node else { return }
         
+        node.removeAction(forKey: "frozenVisuals")
         node.removeAllActions()
-        node.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.1))
+        
+        node.alpha = 1.0
+        
+        // TODO: Change texture to normal ompreng
+        
+        let originalColor: SKColor = player.side == .left ? .blue : .red
+        node.run(SKAction.colorize(with: originalColor, colorBlendFactor: 1.0, duration: 0.1))
+        
+        node.physicsBody?.affectedByGravity = true
         node.physicsBody?.contactTestBitMask = PhysicsCategory.food | PhysicsCategory.player
     }
 }
