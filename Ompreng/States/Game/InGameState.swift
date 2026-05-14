@@ -238,6 +238,9 @@ class InGameState: GKState {
               let foodBar = player.component(ofType: FoodBarComponent.self) else { return }
         scoreComponent.currentScore += GameConfig.completedMealBonus
         foodBar.reset()
+        
+        // Zoom effect
+        AnimateScoreZoom(for: player)
     }
     
     private func ApplyDuplicatePenalty(to player: PlayerEntity) {
@@ -308,6 +311,27 @@ class InGameState: GKState {
             ? foodType.color
             : .gray
         }
+    }
+    
+    // MARK: - Visual Feedback
+    
+    private func AnimateScoreZoom(for player: PlayerEntity){
+        let targetLabel = player.side == .left ? playerOneScoreLabel : playerTwoScoreLabel
+        
+        // Normal condition
+        targetLabel?.removeAllActions()
+        targetLabel?.setScale(1.0)
+        
+        // Zoom in effect
+        let zoomIn = SKAction.scale(to: 1.6, duration: 0.1)
+        zoomIn.timingMode = .easeOut
+        
+        let zoomOut = SKAction.scale(to: 1.0, duration: 0.2)
+        zoomOut.timingMode = .easeInEaseOut
+        
+        let pulse = SKAction.sequence([zoomIn, zoomOut])
+        targetLabel?.run(pulse)
+        
     }
     
     // MARK: - Helpers
