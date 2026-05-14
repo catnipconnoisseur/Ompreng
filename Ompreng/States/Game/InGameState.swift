@@ -21,8 +21,8 @@ class InGameState: GKState {
 
     // Player one is represented by the raw tray in GameScene for now.
     // PlayerEntity is kept for score, food bar, and state tracking only — not for its node.
-    private var playerOne: PlayerEntity?
-    private var playerTwo: PlayerEntity?
+    private weak var playerOne: PlayerEntity?
+    private weak var playerTwo: PlayerEntity?
 
     private var timeRemaining: TimeInterval = GameConfig.gameDuration
     private var isGameOver = false
@@ -49,7 +49,13 @@ class InGameState: GKState {
         timeRemaining = GameConfig.gameDuration
         isGameOver = false
 
-        SetupPlayers()
+        self.playerOne = scene.playerLeft
+        self.playerTwo = scene.playerRight
+        
+        playerOne?.stateMachine?.enter(ActiveState.self)
+        playerTwo?.stateMachine?.enter(ActiveState.self)
+        
+        //SetupPlayers()
         SetupUI(in: scene)
 
         scene.spawner = DishSpawner(scene: scene, spawnInterval: GameConfig.spawnInterval)
@@ -89,18 +95,18 @@ class InGameState: GKState {
 
     // MARK: - Setup
 
-    private func SetupPlayers() {
-        // PlayerEntity is used for game logic only (score, food bar, state machine).
-        // The visible tray node lives directly on GameScene — no GKSKNodeComponent needed.
-        let dummyNodeOne = SKSpriteNode()
-        playerOne = PlayerEntity(node: dummyNodeOne, side: .left)
-
-        let dummyNodeTwo = SKSpriteNode()
-        playerTwo = PlayerEntity(node: dummyNodeTwo, side: .right)
-
-        playerOne?.stateMachine?.enter(ActiveState.self)
-        playerTwo?.stateMachine?.enter(ActiveState.self)
-    }
+//    private func SetupPlayers() {
+//        // PlayerEntity is used for game logic only (score, food bar, state machine).
+//        // The visible tray node lives directly on GameScene — no GKSKNodeComponent needed.
+//        let dummyNodeOne = SKSpriteNode()
+//        playerOne = PlayerEntity(node: dummyNodeOne, side: .left)
+//
+//        let dummyNodeTwo = SKSpriteNode()
+//        playerTwo = PlayerEntity(node: dummyNodeTwo, side: .right)
+//
+//        playerOne?.stateMachine?.enter(ActiveState.self)
+//        playerTwo?.stateMachine?.enter(ActiveState.self)
+//    }
 
     private func SetupUI(in scene: GameScene) {
         let sceneWidth = scene.size.width
