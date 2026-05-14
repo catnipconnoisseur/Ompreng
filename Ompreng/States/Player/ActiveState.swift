@@ -45,25 +45,39 @@ class ActiveState : GKState {
         let sceneWidth = scene.size.width
         let sceneHeight = scene.size.height
         
-        // Batas Bawah: 1/4 tinggi layar (0.0 - 0.25)
-        let targetY = rawNormalizedPos.y * (sceneHeight * 0.25)
-        
-        // Batas Jelajah: 75% (0.75) dan 25% (0.25)
-        let maxOverlapLeft = sceneWidth * 0.75
-        let minOverlapRight = sceneWidth * 0.25
-        let rightAreaWidth = sceneWidth - minOverlapRight // Sama dengan 75% layar
-        
-        var targetX: CGFloat = 0
+        // For Touch Input
+        var targetX = rawNormalizedPos.x * sceneWidth
+        var targetY = rawNormalizedPos.y * sceneHeight
         
         switch player.side {
         case .left:
-            // Petakan input X Vision penuh (0.0 - 1.0) ke rentang 0 hingga 75% layar
-            targetX = rawNormalizedPos.x * maxOverlapLeft
-            
+            targetX = min(targetX, sceneWidth * 0.75)
         case .right:
-            // Petakan input X Vision penuh (0.0 - 1.0) ke rentang 25% hingga 100% layar
-            targetX = minOverlapRight + (rawNormalizedPos.x * rightAreaWidth)
+            targetX = max(targetX, sceneWidth * 0.25)
         }
+        
+        targetY = min(targetY, sceneHeight * 0.5)
+        
+        // TODO: - For Vision Later
+        //        // Batas Bawah: 1/4 tinggi layar (0.0 - 0.25)
+        //        let targetY = rawNormalizedPos.y * (sceneHeight * 0.25)
+        //
+        //        // Batas Jelajah: 75% (0.75) dan 25% (0.25)
+        //        let maxOverlapLeft = sceneWidth * 0.75
+        //        let minOverlapRight = sceneWidth * 0.25
+        //        let rightAreaWidth = sceneWidth - minOverlapRight // Sama dengan 75% layar
+        //
+        //        var targetX: CGFloat = 0
+        //
+        //        switch player.side {
+        //        case .left:
+        //            // Petakan input X Vision penuh (0.0 - 1.0) ke rentang 0 hingga 75% layar
+        //            targetX = rawNormalizedPos.x * maxOverlapLeft
+        //
+        //        case .right:
+        //            // Petakan input X Vision penuh (0.0 - 1.0) ke rentang 25% hingga 100% layar
+        //            targetX = minOverlapRight + (rawNormalizedPos.x * rightAreaWidth)
+        //        }
         
         // Physics collision ompreng
         let node = renderComponent.node
@@ -73,7 +87,7 @@ class ActiveState : GKState {
         let dy = targetY - currentPos.y
         
         // Spring Constant
-        let springConstant: CGFloat = 10.0
+        let springConstant: CGFloat = 25.0 // Need adjusting
         
         if let physicsBody = node.physicsBody {
             // Terapkan kecepatan ke arah target
