@@ -157,10 +157,11 @@ extension GameScene: SKPhysicsContactDelegate {
         let rightNode = playerRight.component(ofType: GKSKNodeComponent.self)?.node
         
         if nodeA === leftNode || nodeB === leftNode {
-            inGameState?.HandleContactWithTray(food: food)
+            inGameState?.HandleContactWithTray(food: food, for: playerLeft)
         }
         else if nodeA === rightNode || nodeB === rightNode {
-            inGameState?.HandleContactWithTray(food: food)
+            inGameState?.HandleContactWithTray(food: food, for: playerRight
+            )
         }
         
 //        // Check contact with the raw tray node

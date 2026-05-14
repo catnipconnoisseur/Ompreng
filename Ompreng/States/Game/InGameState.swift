@@ -182,9 +182,8 @@ class InGameState: GKState {
     // MARK: - Contact Handling
 
     /// Called by GameScene when food hits the raw tray node (player one).
-    func HandleContactWithTray(food: FoodEntity) {
+    func HandleContactWithTray(food: FoodEntity, for player: PlayerEntity) {
         guard !isGameOver else { return }
-        guard let player = playerOne else { return }
 
         guard let stateComponent = player.component(ofType: StateComponent.self),
               stateComponent.currentState != .frozen else { return }
@@ -201,9 +200,16 @@ class InGameState: GKState {
             ApplyDuplicatePenalty(to: player)
             food.removeFromParent()
         }
+        
+        // Updating UI for two players mechanics
+        if player.side == .left {
+            UpdateScoreLabel(for: player, label: playerOneScoreLabel)
+            UpdateFoodBarUI(for: player, nodes: playerOneFoodBarNodes)
+        } else {
+            UpdateScoreLabel(for: player, label: playerTwoScoreLabel)
+            UpdateFoodBarUI(for: player, nodes: playerTwoFoodBarNodes)
+        }
 
-        UpdateScoreLabel(for: player, label: playerOneScoreLabel)
-        UpdateFoodBarUI(for: player, nodes: playerOneFoodBarNodes)
     }
 
     // MARK: - Game Logic
