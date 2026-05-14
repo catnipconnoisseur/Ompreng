@@ -9,6 +9,13 @@ class PositionComponent: GKComponent {
      */
     var normalizedHandMidpoint: CGPoint?
     
+    // Calibration variable
+    var leftWrist: CGPoint?
+    var rightWrist: CGPoint?
+    
+    // For separation metric (Is the player on the left or right side of the screen?)
+    var rootPosition: CGPoint? // Neck point
+    
     override init() {
         super.init()
     }
