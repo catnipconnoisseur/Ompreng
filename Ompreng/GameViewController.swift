@@ -46,4 +46,8 @@ class GameViewController: UIViewController {
     override var prefersStatusBarHidden: Bool {
         return true
     }
+    
+    override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge {
+            return .all
+        }
 }
