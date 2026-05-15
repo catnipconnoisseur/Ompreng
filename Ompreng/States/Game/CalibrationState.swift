@@ -25,7 +25,10 @@ class CalibrationState: GKState {
         if isPoseCorrect {
             isCalibrating = true
             countdownTimer -= seconds
-            print(String(format: "Kalibrasi: %.1f..."), countdownTimer)
+            
+            // Show at terminal
+            let roundedTime = Double(round(10 * countdownTimer) / 10)
+            print("Kalibrasi: \(roundedTime) detik...")
             
             if countdownTimer <= 0 {
                 stateMachine?.enter(InGameState.self)
