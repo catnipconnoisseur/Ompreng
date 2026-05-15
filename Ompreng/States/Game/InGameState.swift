@@ -35,8 +35,8 @@ class InGameState: GKState {
     private var playerOneScoreLabel: SKLabelNode?
     private var playerTwoScoreLabel: SKLabelNode?
     
-    private var playerOneFoodBarNodes: [FoodType: SKShapeNode] = [:]
-    private var playerTwoFoodBarNodes: [FoodType: SKShapeNode] = [:]
+    private var playerOneFoodBarNodes: [FoodType: SKSpriteNode] = [:]
+    private var playerTwoFoodBarNodes: [FoodType: SKSpriteNode] = [:]
     
     // MARK: Init
     
@@ -175,25 +175,25 @@ class InGameState: GKState {
     
     // MARK: - Food Bar
     
-    private func BuildFoodBar(side: PlayerSide, in scene: GameScene) -> [FoodType: SKShapeNode] {
+    private func BuildFoodBar(side: PlayerSide, in scene: GameScene) -> [FoodType: SKSpriteNode] {
         let sceneWidth = scene.size.width
-        let circleRadius: CGFloat = 18
-        let spacing: CGFloat = 46
-        let y: CGFloat = 30
-        let totalWidth = spacing * CGFloat(FoodType.allCases.count - 1)
-        let startX: CGFloat = side == .left ? 30 : sceneWidth - 30 - totalWidth
         
-        var nodes: [FoodType: SKShapeNode] = [:]
+        let iconSize = CGSize(width: 80, height: 80)
+        let spacing: CGFloat = 46
+        let y: CGFloat = 50
+        let totalWidth = spacing * CGFloat(FoodType.allCases.count - 1)
+        let startX: CGFloat = side == .left ? 50 : sceneWidth - 50 - totalWidth
+        
+        var nodes: [FoodType: SKSpriteNode] = [:]
         for (index, foodType) in FoodType.allCases.enumerated() {
-            let circle = SKShapeNode(circleOfRadius: circleRadius)
-            circle.fillColor = .gray
-            circle.strokeColor = .darkGray
-            circle.lineWidth = 1
-            circle.position = CGPoint(x: startX + CGFloat(index) * spacing, y: y)
-            circle.zPosition = 10
-            circle.name = "\(side)_foodbar_\(foodType.displayName)"
-            scene.addChild(circle)
-            nodes[foodType] = circle
+            let texture = SKTexture(imageNamed: foodType.barUncollectedTextureName)
+            let icon = SKSpriteNode(texture: texture, size:iconSize)
+            
+            icon.position = CGPoint(x: startX + CGFloat(index) * spacing, y: y)
+            icon.zPosition = 10
+            icon.name = "\(side)_foodbar_\(foodType.displayName)"
+            scene.addChild(icon)
+            nodes[foodType] = icon
         }
         return nodes
     }
@@ -304,12 +304,14 @@ class InGameState: GKState {
         label?.text = "Score: \(score)"
     }
     
-    private func UpdateFoodBarUI(for player: PlayerEntity?, nodes: [FoodType: SKShapeNode]) {
+    private func UpdateFoodBarUI(for player: PlayerEntity?, nodes: [FoodType: SKSpriteNode]) {
         guard let foodBar = player?.component(ofType: FoodBarComponent.self) else { return }
         for foodType in FoodType.allCases {
-            nodes[foodType]?.fillColor = foodBar.collectedFoods.contains(foodType)
-            ? foodType.color
-            : .gray
+            if foodBar.collectedFoods.contains(foodType) {
+                nodes[foodType]?.texture = SKTexture(imageNamed: foodType.barCollectedTextureName)
+            } else {
+                nodes[foodType]?.texture = SKTexture(imageNamed: foodType.barUncollectedTextureName)
+            }
         }
     }
     

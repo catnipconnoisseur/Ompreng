@@ -17,7 +17,7 @@ class GameScene: SKScene {
     
     override func didMove(to view: SKView) {
         self.size = CGSize(width: 1024, height: 768)
-        self.backgroundColor = .white
+        self.backgroundColor = .gray
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         self.physicsWorld.contactDelegate = self
         
@@ -25,32 +25,32 @@ class GameScene: SKScene {
         view.isMultipleTouchEnabled = true
         
         // PlayerEntity setup
-        let nodeLeft = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+        let omprengSize = CGSize(width: 200, height: 100)
+        
+        // Left Player
+        let textureLeft = SKTexture(imageNamed: "OmprengNormal")
+        let nodeLeft = SKSpriteNode(texture: textureLeft, size: omprengSize)
         nodeLeft.position = CGPoint(x: 256, y: 100)
         self.addChild(nodeLeft)
         playerLeft = PlayerEntity(node: nodeLeft, side: .left)
         
-        let nodeRight = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+        // Right Player
+        let textureRight = SKTexture(imageNamed: "OmprengNormal")
+        let nodeRight = SKSpriteNode(texture: textureRight, size: omprengSize)
         nodeRight.position = CGPoint(x: 768, y: 100)
         self.addChild(nodeRight)
         playerRight = PlayerEntity(node: nodeRight, side: .right)
         
+//        let nodeLeft = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+//        nodeLeft.position = CGPoint(x: 256, y: 100)
+//        self.addChild(nodeLeft)
+//        playerLeft = PlayerEntity(node: nodeLeft, side: .left)
+//        
+//        let nodeRight = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+//        nodeRight.position = CGPoint(x: 768, y: 100)
+//        self.addChild(nodeRight)
+//        playerRight = PlayerEntity(node: nodeRight, side: .right)
         
-        // Tray copied directly from pulled GameScene
-        //        tray = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
-        //        tray.position = CGPoint(x: 512, y: 50)
-        //        tray.zPosition = 100
-        //        tray.physicsBody = SKPhysicsBody(rectangleOf: tray.size)
-        //        tray.physicsBody?.isDynamic = false
-        //        tray.physicsBody?.categoryBitMask = PhysicsCategory.player
-        //        tray.physicsBody?.collisionBitMask = PhysicsCategory.none
-        //        tray.physicsBody?.contactTestBitMask = PhysicsCategory.food
-        //        self.addChild(tray)
-        //
-        //        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        //        self.view?.addGestureRecognizer(panGesture)
-        
-        // InGameState handles timer, score, food bar, spawner
         let state = InGameState(scene: self)
         self.inGameState = state
         gameMachine = GKStateMachine(states: [
