@@ -1,11 +1,19 @@
 import SpriteKit
 import SwiftUI
+import GameplayKit
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
+class GameScene: SKScene {
+    
     var spawner: DishSpawner?
-    var timerLabel: SKLabelNode!
-    var remainingTime: TimeInterval = 120
-    var tray: SKSpriteNode!
+    var inGameState: InGameState?
+    //var tray: SKSpriteNode!
+    
+    // Using real player entity
+    var playerLeft: PlayerEntity!
+    var playerRight: PlayerEntity!
+    
+    private var gameMachine: GKStateMachine?
+    private var lastUpdateTime: TimeInterval = 0
     
     override func didMove(to view: SKView) {
         self.size = CGSize(width: 1024, height: 768)
@@ -13,89 +21,157 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         self.physicsWorld.contactDelegate = self
         
-        // Setup Timer
-        timerLabel = SKLabelNode(fontNamed: "Arial")
-        timerLabel.fontSize = 64
-        timerLabel.fontColor = .black
-        timerLabel.horizontalAlignmentMode = .center
-        timerLabel.verticalAlignmentMode = .center
-        timerLabel.position = CGPoint(x: 570, y: 680)
-        timerLabel.zPosition = 1000
-        timerLabel.text = "2:00"
-        self.addChild(timerLabel)
+        // For Touch Input
+        view.isMultipleTouchEnabled = true
         
-        // Initialize dish spawner
-        spawner = DishSpawner(scene: self, spawnInterval: 0.5)
-        spawner?.start()
+        // PlayerEntity setup
+        let nodeLeft = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+        nodeLeft.position = CGPoint(x: 256, y: 100)
+        self.addChild(nodeLeft)
+        playerLeft = PlayerEntity(node: nodeLeft, side: .left)
         
-        // Setup Tray (Ompreng)
-        tray = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
-        tray.position = CGPoint(x: 512, y: 50)
-        tray.zPosition = 100
-        tray.physicsBody = SKPhysicsBody(rectangleOf: tray.size)
-        tray.physicsBody?.isDynamic = false
-        tray.physicsBody?.categoryBitMask = PhysicsCategory.player
-        tray.physicsBody?.collisionBitMask = PhysicsCategory.none
-        self.addChild(tray)
+        let nodeRight = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+        nodeRight.position = CGPoint(x: 768, y: 100)
+        self.addChild(nodeRight)
+        playerRight = PlayerEntity(node: nodeRight, side: .right)
         
-        // Add pan gesture recognizer
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        self.view?.addGestureRecognizer(panGesture)
+        
+        // Tray copied directly from pulled GameScene
+        //        tray = SKSpriteNode(color: .blue, size: CGSize(width: 100, height: 30))
+        //        tray.position = CGPoint(x: 512, y: 50)
+        //        tray.zPosition = 100
+        //        tray.physicsBody = SKPhysicsBody(rectangleOf: tray.size)
+        //        tray.physicsBody?.isDynamic = false
+        //        tray.physicsBody?.categoryBitMask = PhysicsCategory.player
+        //        tray.physicsBody?.collisionBitMask = PhysicsCategory.none
+        //        tray.physicsBody?.contactTestBitMask = PhysicsCategory.food
+        //        self.addChild(tray)
+        //
+        //        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        //        self.view?.addGestureRecognizer(panGesture)
+        
+        // InGameState handles timer, score, food bar, spawner
+        let state = InGameState(scene: self)
+        self.inGameState = state
+        gameMachine = GKStateMachine(states: [
+            CalibrationState(scene: self),
+            state
+        ])
+        gameMachine?.enter(CalibrationState.self)
     }
     
     override func update(_ currentTime: TimeInterval) {
-        remainingTime -= 1/60.0
+        let delta = lastUpdateTime == 0 ? 0 : min(currentTime - lastUpdateTime, 0.05)
+        lastUpdateTime = currentTime
+        gameMachine?.update(deltaTime: delta)
+        playerLeft.update(deltaTime: delta)
+        playerRight.update(deltaTime: delta)
         
-        if remainingTime < 0 {
-            remainingTime = 0
-        }
-        
-        let minutes = Int(remainingTime) / 60
-        let seconds = Int(remainingTime) % 60
-        timerLabel.text = String(format: "%d:%02d", minutes, seconds)
-        
-        // Remove dishes that have fallen off screen
-        self.children.forEach { node in
+        children.forEach { node in
             if let food = node as? FoodEntity, food.position.y < -50 {
                 food.removeFromParent()
             }
         }
     }
     
-    @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
-        guard let view = self.view else { return }
-        let location = gesture.location(in: view)
-        let sceneLocation = self.convertPoint(fromView: location)
+    // MARK: - Touch Injection Multi-Touch
+    
+    private func injectCalibrationMockData(_ touches: Set<UITouch>, isEnding: Bool = false){
+        let posLeft = playerLeft.component(ofType: PositionComponent.self)
+        let posRight = playerRight.component(ofType: PositionComponent.self)
         
-        // Move tray to follow finger horizontally
-        var newX = sceneLocation.x
-        
-        // Clamp tray to screen bounds (with 50px margins)
-        let trayHalfWidth = tray.size.width / 2
-        newX = max(50 + trayHalfWidth, min(974 - trayHalfWidth, newX))
-        
-        tray.position.x = newX
+        for touch in touches{
+            let location = touch.location(in: self)
+            let normalizedX = location.x / size.width
+            let normalizedY = location.y / size.height
+            let isLeftSide = normalizedX < 0.5
+            
+            if isEnding{
+                if isLeftSide{
+                    posLeft?.normalizedHandMidpoint = nil
+                    posLeft?.leftWrist = nil
+                    posRight?.rightWrist = nil
+                    posLeft?.rootPosition = nil
+                }
+                else {
+                    posRight?.normalizedHandMidpoint = nil
+                    posRight?.leftWrist = nil
+                    posRight?.rightWrist = nil
+                    posRight?.rootPosition = nil
+                }
+                continue
+            }
+            
+            // Dummy data
+            if isLeftSide {
+                posLeft?.normalizedHandMidpoint = CGPoint(x: normalizedX, y: normalizedY)
+                posLeft?.rootPosition = CGPoint(x: 0.25, y: 0.2)
+                posLeft?.leftWrist = CGPoint(x: 0.15, y: normalizedY)
+                posLeft?.rightWrist = CGPoint(x: 0.35, y: normalizedY)
+            } else {
+                posRight?.normalizedHandMidpoint = CGPoint(x: normalizedX, y: normalizedY)
+                posRight?.rootPosition = CGPoint(x: 0.75, y: 0.2)
+                posRight?.leftWrist = CGPoint(x: 0.65, y: normalizedY)
+                posRight?.rightWrist = CGPoint(x: 0.85, y: normalizedY)
+            }
+        }
     }
     
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        injectCalibrationMockData(touches)
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        injectCalibrationMockData(touches)
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        injectCalibrationMockData(touches, isEnding: true)
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        injectCalibrationMockData(touches, isEnding: true)
+    }
+    
+    //
+    //    @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
+    //        guard let view = self.view else { return }
+    //        let location = gesture.location(in: view)
+    //        let sceneLocation = self.convertPoint(fromView: location)
+    //        let trayHalfWidth = tray.size.width / 2
+    //        tray.position.x = max(50 + trayHalfWidth, min(974 - trayHalfWidth, sceneLocation.x))
+    //    }
+}
+
+// MARK: - Physics Contact
+
+extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
-        // Determine which body is food and which is player (tray)
-        var foodBody: SKPhysicsBody?
-        var playerBody: SKPhysicsBody?
+        let nodeA = contact.bodyA.node
+        let nodeB = contact.bodyB.node
         
-        if contact.bodyA.categoryBitMask == PhysicsCategory.food {
-            foodBody = contact.bodyA
-            playerBody = contact.bodyB
-        } else if contact.bodyB.categoryBitMask == PhysicsCategory.food {
-            foodBody = contact.bodyB
-            playerBody = contact.bodyA
+        guard let food = (nodeA as? FoodEntity) ?? (nodeB as? FoodEntity) else { return }
+        
+        // Contact detection with PlayerEntity
+        let leftNode = playerLeft.component(ofType: GKSKNodeComponent.self)?.node
+        let rightNode = playerRight.component(ofType: GKSKNodeComponent.self)?.node
+        
+        if nodeA === leftNode || nodeB === leftNode {
+            inGameState?.HandleContactWithTray(food: food, for: playerLeft)
+        }
+        else if nodeA === rightNode || nodeB === rightNode {
+            inGameState?.HandleContactWithTray(food: food, for: playerRight
+            )
         }
         
-        // If collision is between food and player (tray), remove the dish
-        if let food = foodBody?.node as? FoodEntity, playerBody?.categoryBitMask == PhysicsCategory.player {
-            food.removeFromParent()
-        }
+//        // Check contact with the raw tray node
+//        if nodeA === tray || nodeB === tray {
+//            inGameState?.HandleContactWithTray(food: food)
+//        }
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     let skView = SKView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))

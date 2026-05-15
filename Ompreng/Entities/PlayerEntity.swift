@@ -21,9 +21,9 @@ class PlayerEntity : GKEntity {
         node.physicsBody?.isDynamic = true // Harus true agar bisa terdorong
         
         // Tuning dinamika fisika
-        node.physicsBody?.mass = 5.0 // Cukup berat agar dorongan terasa "solid"
-        node.physicsBody?.restitution = 0.2 // Sedikit memantul saat tabrakan antar pemain
-        node.physicsBody?.linearDamping = 0.8 // Hambatan geser agar ompreng tidak licin seperti di atas es
+        node.physicsBody?.mass = 1.0
+        node.physicsBody?.restitution = 0.4
+        node.physicsBody?.linearDamping = 0.4 // Hambatan geser agar ompreng tidak licin seperti di atas es
         node.physicsBody?.allowsRotation = false // Cegah ompreng terbalik secara visual
         
         // Setup Bitmask sesuai PhysicsCategory milikmu
