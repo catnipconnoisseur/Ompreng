@@ -19,7 +19,7 @@ class PlayerEntity : GKEntity {
         
         // Optimizing hitbox size
         let hitboxWidth = node.size.width * 0.7
-        let hitboxHeight = node.size.height * 0.3
+        let hitboxHeight = node.size.height * 0.2
         let hitboxSize = CGSize(width: hitboxWidth, height: hitboxHeight)
         node.physicsBody = SKPhysicsBody(rectangleOf: hitboxSize)
         node.physicsBody?.isDynamic = true // Harus true agar bisa terdorong

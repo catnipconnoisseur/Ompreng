@@ -20,9 +20,6 @@ class InGameState: GKState {
     // MARK: Properties
     
     private weak var scene: GameScene?
-    
-    // Player one is represented by the raw tray in GameScene for now.
-    // PlayerEntity is kept for score, food bar, and state tracking only — not for its node.
     private weak var playerOne: PlayerEntity?
     private weak var playerTwo: PlayerEntity?
     
@@ -30,11 +27,14 @@ class InGameState: GKState {
     private var isGameOver = false
     private var currentSpawnInterval: TimeInterval = GameConfig.initialSpawnInterval
     private var nextSpeedUpTime: TimeInterval = 0
-    
+
     private var timerLabel: SKLabelNode?
     private var playerOneScoreLabel: SKLabelNode?
     private var playerTwoScoreLabel: SKLabelNode?
-    
+
+    private var playerOneScoreBox: SKSpriteNode?
+    private var playerTwoScoreBox: SKSpriteNode?
+
     private var playerOneFoodBarNodes: [FoodType: SKSpriteNode] = [:]
     private var playerTwoFoodBarNodes: [FoodType: SKSpriteNode] = [:]
     
@@ -112,7 +112,7 @@ class InGameState: GKState {
         playerTwo?.update(deltaTime: seconds)
     }
     
-    // MARK: - Setup
+    // MARK: - Setup UI
     
     //    private func SetupPlayers() {
     //        // PlayerEntity is used for game logic only (score, food bar, state machine).
@@ -130,38 +130,51 @@ class InGameState: GKState {
     private func SetupUI(in scene: GameScene) {
         let sceneWidth = scene.size.width
         let sceneHeight = scene.size.height
+        let topY = sceneHeight - 60
         
-        let timer = SKLabelNode(fontNamed: "Helvetica-Bold")
-        timer.fontSize = 36
-        timer.fontColor = .black
-        timer.verticalAlignmentMode = .top
-        timer.position = CGPoint(x: sceneWidth / 2, y: sceneHeight - 10)
-        timer.zPosition = 10
-        timer.name = "timerLabel"
-        scene.addChild(timer)
-        timerLabel = timer
+        // Color
+        let timerUI = CreateUICard(
+                title: "WAKTU",
+                value: "120",
+                imageName: "BarTime", // Nama file PNG kamu
+                textColor: .black,
+                iconName: nil,
+                isIconLeft: false
+            )
+            timerUI.bgNode.position = CGPoint(x: sceneWidth / 2, y: topY)
+            timerUI.bgNode.zPosition = 50
+            scene.addChild(timerUI.bgNode)
+            self.timerLabel = timerUI.labelNode
         
-        let p1Score = SKLabelNode(fontNamed: "Helvetica-Bold")
-        p1Score.fontSize = 28
-        p1Score.fontColor = .black
-        p1Score.horizontalAlignmentMode = .left
-        p1Score.verticalAlignmentMode = .top
-        p1Score.position = CGPoint(x: 20, y: sceneHeight - 10)
-        p1Score.zPosition = 10
-        p1Score.name = "p1ScoreLabel"
-        scene.addChild(p1Score)
-        playerOneScoreLabel = p1Score
+        // UI Score Left Player
+        let p1UI = CreateUICard(
+                title: "PEMAIN 1",
+                value: "0",
+                imageName: "BarScore",
+                textColor: .white,
+                iconName: "OmprengWithDishLeft",
+                isIconLeft: true
+            )
+            p1UI.bgNode.position = CGPoint(x: 180, y: topY)
+            p1UI.bgNode.zPosition = 50
+            scene.addChild(p1UI.bgNode)
+            self.playerOneScoreLabel = p1UI.labelNode
+            self.playerOneScoreBox = p1UI.bgNode
         
-        let p2Score = SKLabelNode(fontNamed: "Helvetica-Bold")
-        p2Score.fontSize = 28
-        p2Score.fontColor = .black
-        p2Score.horizontalAlignmentMode = .right
-        p2Score.verticalAlignmentMode = .top
-        p2Score.position = CGPoint(x: sceneWidth - 20, y: sceneHeight - 10)
-        p2Score.zPosition = 10
-        p2Score.name = "p2ScoreLabel"
-        scene.addChild(p2Score)
-        playerTwoScoreLabel = p2Score
+        // UI Score Right Player
+        let p2UI = CreateUICard(
+                title: "PEMAIN 2",
+                value: "0",
+                imageName: "BarScore",
+                textColor: .white,
+                iconName: "OmprengWithDishRight",
+                isIconLeft: false
+            )
+            p2UI.bgNode.position = CGPoint(x: sceneWidth - 180, y: topY)
+            p2UI.bgNode.zPosition = 100
+            scene.addChild(p2UI.bgNode)
+            self.playerTwoScoreLabel = p2UI.labelNode
+            self.playerTwoScoreBox = p2UI.bgNode
         
         playerOneFoodBarNodes = BuildFoodBar(side: .left, in: scene)
         playerTwoFoodBarNodes = BuildFoodBar(side: .right, in: scene)
@@ -286,7 +299,7 @@ class InGameState: GKState {
         label.text = text
         label.fontSize = 64
         label.verticalAlignmentMode = .center
-        label.fontColor = text == "Winner" ? .systemGreen : (text == "Loser" ? .systemRed : .gray)
+        label.fontColor = text == "Winner" ? .black : (text == "Loser" ? .systemRed : .black)
         label.position = CGPoint(x: x, y: scene.size.height / 2)
         label.zPosition = 20
         label.name = "endLabel"
@@ -301,7 +314,7 @@ class InGameState: GKState {
     
     private func UpdateScoreLabel(for player: PlayerEntity?, label: SKLabelNode?) {
         let score = player?.component(ofType: ScoreComponent.self)?.currentScore ?? 0
-        label?.text = "Score: \(score)"
+        label?.text = "\(score)"
     }
     
     private func UpdateFoodBarUI(for player: PlayerEntity?, nodes: [FoodType: SKSpriteNode]) {
@@ -318,21 +331,21 @@ class InGameState: GKState {
     // MARK: - Visual Feedback
     
     private func AnimateScoreZoom(for player: PlayerEntity){
-        let targetLabel = player.side == .left ? playerOneScoreLabel : playerTwoScoreLabel
+        let targetBox = player.side == .left ? playerOneScoreBox : playerTwoScoreBox
         
         // Normal condition
-        targetLabel?.removeAllActions()
-        targetLabel?.setScale(1.0)
+        targetBox?.removeAllActions()
+        targetBox?.setScale(1.0)
         
         // Zoom in effect
-        let zoomIn = SKAction.scale(to: 1.6, duration: 0.1)
+        let zoomIn = SKAction.scale(to: 1.3, duration: 0.1)
         zoomIn.timingMode = .easeOut
         
         let zoomOut = SKAction.scale(to: 1.0, duration: 0.2)
         zoomOut.timingMode = .easeInEaseOut
         
         let pulse = SKAction.sequence([zoomIn, zoomOut])
-        targetLabel?.run(pulse)
+        targetBox?.run(pulse)
         
     }
     
@@ -344,4 +357,51 @@ class InGameState: GKState {
             .filter { managedNames.contains($0.name ?? "") || ($0.name?.contains("_foodbar_") == true) }
             .forEach { $0.removeFromParent() }
     }
+}
+
+// MARK: - UI HUD
+
+private func CreateUICard(title: String, value: String, imageName: String, textColor: SKColor, iconName: String?, isIconLeft: Bool) -> (bgNode: SKSpriteNode, labelNode: SKLabelNode) {
+    
+    // Rectangle
+    let bgNode = SKSpriteNode(imageNamed: imageName)
+    bgNode.size = CGSize(width: 180, height: 180)
+    
+    // Title Text
+    let titleLabel = SKLabelNode(fontNamed: "Nunito-ExtraBold")
+    titleLabel.text = title
+    titleLabel.fontSize = 12
+    titleLabel.fontColor = textColor
+    titleLabel.verticalAlignmentMode = .top
+    titleLabel.position = CGPoint(x: 0, y: 22)
+    titleLabel.zPosition = 3
+    bgNode.addChild(titleLabel)
+    
+    // Number Text
+    let valueLabel = SKLabelNode(fontNamed: "Nunito-Black")
+    valueLabel.text = value
+    valueLabel.fontSize = 32
+    valueLabel.fontColor = textColor
+    valueLabel.verticalAlignmentMode = .center
+    valueLabel.position = CGPoint(x: 0, y: -10)
+    valueLabel.zPosition = 4
+    bgNode.addChild(valueLabel)
+    
+    // Icon Ompreng
+    if let icon = iconName {
+        let iconNode = SKSpriteNode(imageNamed: icon)
+        iconNode.size = CGSize(width: 130, height: 130)
+        iconNode.zPosition = 5
+        
+        // Posisikan menyembul keluar di kiri atau kanan
+        let offsetX: CGFloat = isIconLeft ? -90 : 90
+        iconNode.position = CGPoint(x: offsetX, y: 0)
+        
+        // Beri efek rotasi sedikit agar terlihat lebih dinamis dan bermain-main
+        iconNode.zRotation = isIconLeft ? 0.2 : -0.2
+        
+        bgNode.addChild(iconNode)
+    }
+    
+    return (bgNode, valueLabel)
 }

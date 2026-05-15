@@ -4,7 +4,7 @@ import SpriteKit
 class FrozenState: GKState {
     
     unowned let player: PlayerEntity
-    let freezeDuration: TimeInterval = 1.0
+    let freezeDuration: TimeInterval = 2.0
     
     init(entity: PlayerEntity) {
         self.player = entity
@@ -12,10 +12,14 @@ class FrozenState: GKState {
     }
     
     override func didEnter(from previousState: GKState?) {
-        guard let node = player.component(ofType: GKSKNodeComponent.self)?.node else { return }
+        guard let node = player.component(ofType: GKSKNodeComponent.self)?.node as? SKSpriteNode else { return }
         
         // Stop animation
         node.removeAllActions()
+        
+        // Texture
+        node.texture = SKTexture(imageNamed: "OmprengFreeze")
+        
         
         // Visual feedback
         let vibrate = SKAction.sequence([
@@ -35,8 +39,6 @@ class FrozenState: GKState {
         ])
         
         node.run(penaltyLoop, withKey: "frozenVisuals")
-        
-        // TODO: Change into frozen ompreng asset
         
         // Stop physics
         node.physicsBody?.affectedByGravity = false
@@ -64,17 +66,14 @@ class FrozenState: GKState {
     }
     
     override func willExit(to nextState: GKState) {
-        guard let node = player.component(ofType: GKSKNodeComponent.self)?.node else { return }
+        guard let node = player.component(ofType: GKSKNodeComponent.self)?.node as? SKSpriteNode else { return }
         
         node.removeAction(forKey: "frozenVisuals")
         node.removeAllActions()
         
         node.alpha = 1.0
         
-        // TODO: Change texture to normal ompreng
-        
-        let originalColor: SKColor = player.side == .left ? .blue : .red
-        node.run(SKAction.colorize(with: originalColor, colorBlendFactor: 1.0, duration: 0.1))
+        node.texture = SKTexture(imageNamed: "OmprengNormal")
         
         node.physicsBody?.affectedByGravity = true
         node.physicsBody?.contactTestBitMask = PhysicsCategory.food | PhysicsCategory.player

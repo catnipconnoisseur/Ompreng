@@ -16,6 +16,10 @@ class GameScene: SKScene {
     private var lastUpdateTime: TimeInterval = 0
     
     override func didMove(to view: SKView) {
+        for family in UIFont.familyNames.sorted() {
+            let names = UIFont.fontNames(forFamilyName: family)
+            print("Family: \(family) Font names: \(names)")
+        }
         self.size = CGSize(width: 1024, height: 768)
         self.backgroundColor = .gray
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
@@ -25,7 +29,7 @@ class GameScene: SKScene {
         view.isMultipleTouchEnabled = true
         
         // PlayerEntity setup
-        let omprengSize = CGSize(width: 200, height: 100)
+        let omprengSize = CGSize(width: 200, height: 200)
         
         // Left Player
         let textureLeft = SKTexture(imageNamed: "OmprengNormal")
